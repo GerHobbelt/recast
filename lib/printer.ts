@@ -833,6 +833,10 @@ function genericPrintNoParens(path: any, options: any, print: any) {
             return printMethod(path, options, print);
         }
 
+        if (n.shorthand && n.value.type === "AssignmentPattern") {
+            return path.call(print, "value");
+        }
+
         var key = path.call(print, "key");
         var value = path.call(print, "value");
 
