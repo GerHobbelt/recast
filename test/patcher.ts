@@ -1,15 +1,13 @@
-var assert = require("assert");
-var recast = require("..");
-var types = require("../lib/types");
+import assert from "assert";
+import recast from "../main";
+import types from "../lib/types";
 var n = types.namedTypes;
 var b = types.builders;
-var patcherModule = require("../lib/patcher");
-var getReprinter = patcherModule.getReprinter;
-var Patcher = patcherModule.Patcher;
-var fromString = require("../lib/lines").fromString;
-var parse = require("../lib/parser").parse;
-var FastPath = require("../lib/fast-path");
-var eol = require("os").EOL;
+import { getReprinter, Patcher } from "../lib/patcher";
+import { fromString } from "../lib/lines";
+import { parse } from "../lib/parser";
+import FastPath from "../lib/fast-path";
+import { EOL as eol } from "os";
 
 var code = [
   "// file comment",
@@ -20,7 +18,7 @@ var code = [
   "});"
 ];
 
-function loc(sl, sc, el, ec) {
+function loc(sl: number, sc: number, el: number, ec: number) {
   return {
     start: { line: sl, column: sc },
     end: { line: el, column: ec }
@@ -92,15 +90,15 @@ describe("patcher", function() {
     "    }"
   ].join(eol);
 
-    pit("GetIndent", function() {
-    function check(indent) {
+  pit("GetIndent", function() {
+    function check(indent: number) {
       var lines = fromString(trickyCode).indent(indent);
-            var file = parse(lines.toString(), { parser });
-      var reprinter = FastPath.from(file).call(function(bodyPath) {
+      var file = parse(lines.toString(), { parser });
+      var reprinter = FastPath.from(file).call(function(bodyPath: any) {
         return getReprinter(bodyPath);
       }, "program", "body", 0, "body");
 
-      var reprintedLines = reprinter(function(path) {
+      var reprintedLines = reprinter(function() {
         assert.ok(false, "should not have called print function");
       });
 

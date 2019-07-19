@@ -1,26 +1,33 @@
-"use strict";
-
-var assert = require("assert");
-var sourceMap = require("source-map");
-var printComments = require("./comments").printComments;
-var linesModule = require("./lines");
+import assert from "assert";
+import { printComments } from "./comments";
+import * as linesModule from "./lines";
 var fromString = linesModule.fromString;
 var Lines = linesModule.Lines;
 var concat = linesModule.concat;
-var normalizeOptions = require("./options").normalize;
-var getReprinter = require("./patcher").getReprinter;
-var types = require("./types");
+import { normalize as normalizeOptions } from "./options";
+import { getReprinter } from "./patcher";
+import types from "./types";
 var namedTypes = types.namedTypes;
 var isString = types.builtInTypes.string;
 var isObject = types.builtInTypes.object;
-var FastPath = require("./fast-path");
-var util = require("./util");
+import FastPath from "./fast-path";
+import * as util from "./util";
 
-function replChr(str, index, chr) {
+function replChr(str: string, index: number, chr: string) {
     return str.substr(0, index) + chr + str.substr(index + 1);
 }
 
-function PrintResult(code, sourceMap, options) {
+export interface PrintResultType {
+    code: string;
+    map?: any;
+    toString(): string;
+}
+
+interface PrintResultConstructor {
+    new(code: any, sourceMap?: any, options: any): PrintResultType;
+}
+
+const PrintResult = function PrintResult(this: PrintResultType, code: any, sourceMap?: any, options: any) {
     options = options || normalizeOptions(null);
     assert.ok(this instanceof PrintResult);
 
@@ -76,9 +83,9 @@ function PrintResult(code, sourceMap, options) {
         isObject.assert(sourceMap);
         this.map = sourceMap;
     }
-}
+} as any as PrintResultConstructor;
 
-var PRp = PrintResult.prototype;
+var PRp: PrintResultType = PrintResult.prototype;
 var warnedAboutToString = false;
 
 PRp.toString = function() {
@@ -97,7 +104,16 @@ PRp.toString = function() {
 
 var emptyPrintResult = new PrintResult("");
 
-function Printer(config) {
+interface PrinterType {
+    print(ast: any): PrintResultType;
+    printGenerically(ast: any): PrintResultType;
+}
+
+interface PrinterConstructor {
+    new(config?: any): PrinterType;
+}
+
+const Printer = function Printer(this: PrinterType, config?: any) {
     assert.ok(this instanceof Printer);
 
     const explicitTabWidth = config && config.tabWidth;
@@ -110,14 +126,14 @@ function Printer(config) {
 
     // Non-destructively modifies options with overrides, and returns a
     // new print function that uses the modified options.
-    function makePrintFunctionWith(options, overrides) {
+    function makePrintFunctionWith(options: any, overrides: any) {
         options = Object.assign({}, options, overrides);
-        return function (path) {
+        return function (path: any) {
             return print(path, options);
         };
     }
 
-    function print(path, options) {
+    function print(path: any, options: any) {
         assert.ok(path instanceof FastPath);
         options = options || {};
 
@@ -191,8 +207,8 @@ function Printer(config) {
         }
 
         // Print the entire AST generically.
-        function printGenerically(path) {
-            return printComments(path, function (path) {
+        function printGenerically(path: any) {
+            return printComments(path, function (path: any) {
                 return genericPrint(path, config, {
                     includeComments: true,
                     avoidRootParens: false
@@ -223,11 +239,11 @@ function Printer(config) {
         config.reuseWhitespace = oldReuseWhitespace;
         return pr;
     };
-}
+} as any as PrinterConstructor;
 
-exports.Printer = Printer;
+export { Printer };
 
-function genericPrint(path, config, options, printPath) {
+function genericPrint(path: any, config: any, options: any, printPath: any) {
     assert.ok(path instanceof FastPath);
 
     const node = path.getValue();
@@ -269,7 +285,7 @@ function genericPrint(path, config, options, printPath) {
 // functions in this file call the `config` object (that is, the
 // configuration object originally passed into the Printer constructor).
 // Its properties are documented in lib/options.js.
-function genericPrintNoParens(path, options, print) {
+function genericPrintNoParens(path: any, options: any, print: any) {
     var n = path.getValue();
 
     if (!n) {
@@ -282,7 +298,7 @@ function genericPrintNoParens(path, options, print) {
 
     namedTypes.Printable.assert(n);
 
-    var parts = [];
+    var parts: any[] = [];
 
     switch (n.type) {
     case "File":
@@ -291,12 +307,16 @@ function genericPrintNoParens(path, options, print) {
     case "Program":
         // Babel 6
         if (n.directives) {
-            path.each(function(childPath) {
+            path.each(function(childPath: any) {
                 parts.push(print(childPath), ";\n");
             }, "directives");
         }
 
-        parts.push(path.call(function(bodyPath) {
+        if (n.interpreter) {
+            parts.push(path.call(print, "interpreter"));
+        }
+
+        parts.push(path.call(function(bodyPath: any) {
             return printStatementSequence(bodyPath, options, print);
         }, "body"));
 
@@ -593,10 +613,10 @@ function genericPrintNoParens(path, options, print) {
         if (n.specifiers &&
             n.specifiers.length > 0) {
 
-            const unbracedSpecifiers = [];
-            const bracedSpecifiers = [];
+            const unbracedSpecifiers: any[] = [];
+            const bracedSpecifiers: any[] = [];
 
-            path.each(function (specifierPath) {
+            path.each(function (specifierPath: any) {
                 const spec = specifierPath.getValue();
                 if (spec.type === "ImportSpecifier") {
                     bracedSpecifiers.push(print(specifierPath));
@@ -646,7 +666,7 @@ function genericPrintNoParens(path, options, print) {
     }
 
     case "BlockStatement":
-        var naked = path.call(function(bodyPath) {
+        var naked = path.call(function(bodyPath: any) {
             return printStatementSequence(bodyPath, options, print);
         }, "body");
 
@@ -659,7 +679,7 @@ function genericPrintNoParens(path, options, print) {
         parts.push("{\n");
         // Babel 6
         if (n.directives) {
-            path.each(function(childPath) {
+            path.each(function(childPath: any) {
                 parts.push(
                     print(childPath).indent(options.tabWidth),
                     ";",
@@ -719,6 +739,9 @@ function genericPrintNoParens(path, options, print) {
 
         if (isTypeAnnotation) {
             fields.push("indexers", "callProperties");
+            if (n.internalSlots != null) {
+                fields.push("internalSlots");
+            }
         }
 
         fields.push("properties");
@@ -736,7 +759,7 @@ function genericPrintNoParens(path, options, print) {
 
         var i = 0;
         fields.forEach(function(field) {
-            path.each(function(childPath) {
+            path.each(function(childPath: any) {
                 var lines = print(childPath);
 
                 if (!oneLine) {
@@ -821,15 +844,19 @@ function genericPrintNoParens(path, options, print) {
 
     case "ClassMethod": // Babel 6
     case "ObjectMethod": // Babel 6
+    case "ClassPrivateMethod":
     case "TSDeclareMethod":
         return printMethod(path, options, print);
+
+    case "PrivateName":
+        return concat(["#", path.call(print, "id")]);
 
     case "Decorator":
         return concat(["@", path.call(print, "expression")]);
 
     case "ArrayExpression":
     case "ArrayPattern":
-        var elems = n.elements,
+        var elems: any[] = n.elements,
             len = elems.length;
 
         var printed = path.map(print, "elements");
@@ -845,7 +872,7 @@ function genericPrintNoParens(path, options, print) {
           parts.push("[\n");
         }
 
-        path.each(function(elemPath) {
+        path.each(function(elemPath: any) {
             var i = elemPath.getName();
             var elem = elemPath.getValue();
             if (!elem) {
@@ -933,6 +960,9 @@ function genericPrintNoParens(path, options, print) {
     case "DirectiveLiteral": // Babel 6
         return fromString(nodeStr(n.value, options));
 
+    case "InterpreterDirective":
+        return fromString(`#!${n.value}\n`, options);
+
     case "ModuleSpecifier":
         if (n.local) {
             throw new Error(
@@ -986,7 +1016,7 @@ function genericPrintNoParens(path, options, print) {
         parts.push(n.kind, " ");
 
         var maxLen = 0;
-        var printed = path.map(function(childPath) {
+        var printed = path.map(function(childPath: any) {
             var lines = print(childPath);
             maxLen = Math.max(lines.length, maxLen);
             return lines;
@@ -1119,7 +1149,7 @@ function genericPrintNoParens(path, options, print) {
         return concat(parts);
 
     case "DoExpression":
-        var statements = path.call(function(bodyPath) {
+        var statements = path.call(function(bodyPath: any) {
             return printStatementSequence(bodyPath, options, print);
         }, "body");
 
@@ -1159,7 +1189,7 @@ function genericPrintNoParens(path, options, print) {
         if (n.handler) {
             parts.push(" ", path.call(print, "handler"));
         } else if (n.handlers) {
-            path.each(function(handlerPath) {
+            path.each(function(handlerPath: any) {
                 parts.push(" ", print(handlerPath));
             }, "handlers");
         }
@@ -1220,7 +1250,7 @@ function genericPrintNoParens(path, options, print) {
             parts.push("default:");
 
         if (n.consequent.length > 0) {
-            parts.push("\n", path.call(function(consequentPath) {
+            parts.push("\n", path.call(function(consequentPath: any) {
                 return printStatementSequence(consequentPath, options, print);
             }, "consequent").indent(options.tabWidth));
             parts.push("\n");       // empty line to separate cases/case-collections with code blocks 
@@ -1282,7 +1312,7 @@ function genericPrintNoParens(path, options, print) {
         }
 
         var childLines = concat(
-            path.map(function(childPath) {
+            path.map(function(childPath: any) {
                 var child = childPath.getValue();
 
                 if (namedTypes.Literal.check(child) &&
@@ -1308,9 +1338,9 @@ function genericPrintNoParens(path, options, print) {
 
     case "JSXOpeningElement":
         parts.push("<", path.call(print, "name"));
-        var attrParts = [];
+        var attrParts: any[] = [];
 
-        path.each(function(attrPath) {
+        path.each(function(attrPath: any) {
             attrParts.push(" ", print(attrPath));
         }, "attributes");
 
@@ -1365,7 +1395,7 @@ function genericPrintNoParens(path, options, print) {
 
         return concat([
             "{\n",
-            path.call(function(bodyPath) {
+            path.call(function(bodyPath: any) {
                 return printStatementSequence(bodyPath, options, print);
             }, "body").indent(options.tabWidth),
             "\n}"
@@ -1409,6 +1439,24 @@ function genericPrintNoParens(path, options, print) {
         if (n.optional) {
             parts.push("?");
         }
+
+        if (n.typeAnnotation) {
+            parts.push(path.call(print, "typeAnnotation"));
+        }
+
+        if (n.value) {
+            parts.push(" = ", path.call(print, "value"));
+        }
+
+        parts.push(";");
+        return concat(parts);
+
+    case "ClassPrivateProperty":
+        if (n.static) {
+            parts.push("static ");
+        }
+
+        parts.push(path.call(print, "key"));
 
         if (n.typeAnnotation) {
             parts.push(path.call(print, "typeAnnotation"));
@@ -1470,7 +1518,7 @@ function genericPrintNoParens(path, options, print) {
         var expressions = path.map(print, "expressions");
         parts.push("`");
 
-        path.each(function(childPath) {
+        path.each(function(childPath: any) {
             var i = childPath.getName();
             parts.push(print(childPath));
             if (i < expressions.length) {
@@ -1569,7 +1617,7 @@ function genericPrintNoParens(path, options, print) {
           parts.push("[\n");
         }
 
-        path.each(function(elemPath) {
+        path.each(function(elemPath: any) {
             var i = elemPath.getName();
             var elem = elemPath.getValue();
             if (!elem) {
@@ -1609,6 +1657,17 @@ function genericPrintNoParens(path, options, print) {
     case "BooleanLiteralTypeAnnotation":
         assert.strictEqual(typeof n.value, "boolean");
         return fromString("" + n.value, options);
+
+    case "InterfaceTypeAnnotation":
+        parts.push("interface");
+        if (n.extends && n.extends.length > 0) {
+            parts.push(
+                " extends ",
+                fromString(", ").join(path.map(print, "extends"))
+            );
+        }
+        parts.push(" ", path.call(print, "body"));
+        return concat(parts);
 
     case "DeclareClass":
         return printFlowDeclaration(path, [
@@ -1670,6 +1729,7 @@ function genericPrintNoParens(path, options, print) {
         var parent = path.getParentNode(0);
         var isArrowFunctionTypeAnnotation = !(
             namedTypes.ObjectTypeCallProperty.check(parent) ||
+            (namedTypes.ObjectTypeInternalSlot.check(parent) && parent.method) ||
             namedTypes.DeclareFunction.check(path.getParentNode(2))
         );
 
@@ -1683,8 +1743,8 @@ function genericPrintNoParens(path, options, print) {
 
         parts.push(
             "(",
-            fromString(", ").join(path.map(print, "params")),
-            ")"
+            printFunctionParams(path, options, print),
+            ")",
         );
 
         // The returnType is not wrapped in a TypeAnnotation, so the colon
@@ -1788,6 +1848,17 @@ function genericPrintNoParens(path, options, print) {
             path.call(print, "key"),
             n.optional ? "?" : "",
             ": ",
+            path.call(print, "value")
+        ]);
+
+    case "ObjectTypeInternalSlot":
+        return concat([
+            n.static ? "static " : "",
+            "[[",
+            path.call(print, "id"),
+            "]]",
+            n.optional ? "?" : "",
+            n.value.type !== "FunctionTypeAnnotation" ? ": " : "",
             path.call(print, "value")
         ]);
 
@@ -2146,7 +2217,6 @@ function genericPrintNoParens(path, options, print) {
         // in a type predicate, it takes the for u is U
         var parent = path.getParentNode(0);
         var prefix = ": ";
-        var isFunctionType = namedTypes.TSFunctionType.check(parent);
         if (namedTypes.TSFunctionType.check(parent)) {
             prefix = " => ";
         }
@@ -2431,7 +2501,7 @@ function genericPrintNoParens(path, options, print) {
     }
 
     case "TSModuleBlock":
-        return path.call(function (bodyPath) {
+        return path.call(function (bodyPath: any) {
             return printStatementSequence(bodyPath, options, print);
         }, "body");
 
@@ -2472,12 +2542,10 @@ function genericPrintNoParens(path, options, print) {
         debugger;
         throw new Error("unknown type: " + JSON.stringify(n.type));
     }
-
-    return p;
 }
 
-function printDecorators(path, printPath) {
-    const parts = [];
+function printDecorators(path: any, printPath: any) {
+    const parts: any[] = [];
     const node = path.getValue();
 
     if (node.decorators &&
@@ -2486,7 +2554,7 @@ function printDecorators(path, printPath) {
         // responsible for printing node.decorators.
         ! util.getParentExportDeclaration(path)) {
 
-        path.each(function(decoratorPath) {
+        path.each(function(decoratorPath: any) {
             parts.push(printPath(decoratorPath), "\n");
         }, "decorators");
 
@@ -2495,7 +2563,7 @@ function printDecorators(path, printPath) {
                node.declaration.decorators) {
         // Export declarations are responsible for printing any decorators
         // that logically apply to node.declaration.
-        path.each(function(decoratorPath) {
+        path.each(function(decoratorPath: any) {
             parts.push(printPath(decoratorPath), "\n");
         }, "declaration", "decorators");
     }
@@ -2503,17 +2571,12 @@ function printDecorators(path, printPath) {
     return concat(parts);
 }
 
-function printStatementSequence(path, options, print) {
-    var inClassBody =
-        namedTypes.ClassBody &&
-        namedTypes.ClassBody.check(path.getParentNode());
-
-    var filtered = [];
+function printStatementSequence(path: any, options: any, print: any) {
+    var filtered: any[] = [];
     var sawComment = false;
     var sawStatement = false;
 
-    path.each(function(stmtPath) {
-        var i = stmtPath.getName();
+    path.each(function(stmtPath: any) {
         var stmt = stmtPath.getValue();
 
         // Just in case the AST has been modified to contain falsy
@@ -2561,9 +2624,9 @@ function printStatementSequence(path, options, print) {
         );
     }
 
-    var prevTrailingSpace = null;
+    var prevTrailingSpace: any = null;
     var len = filtered.length;
-    var parts = [];
+    var parts: any[] = [];
 
     filtered.forEach(function(info, i) {
         var printed = info.printed;
@@ -2618,7 +2681,7 @@ function printStatementSequence(path, options, print) {
     return concat(parts);
 }
 
-function maxSpace(s1, s2) {
+function maxSpace(s1: any, s2: any) {
     if (!s1 && !s2) {
         return fromString("");
     }
@@ -2641,7 +2704,7 @@ function maxSpace(s1, s2) {
     return spaceLines1;
 }
 
-function printMethod(path, options, print) {
+function printMethod(path: any, options: any, print: any) {
     var node = path.getNode();
     var kind = node.kind;
     var parts = [];
@@ -2710,7 +2773,7 @@ function printMethod(path, options, print) {
         parts.push(
             path.call(print, "value", "typeParameters"),
             "(",
-            path.call(function(valuePath) {
+            path.call(function(valuePath: any) {
                 return printFunctionParams(valuePath, options, print);
             }, "value"),
             ")",
@@ -2727,7 +2790,7 @@ function printMethod(path, options, print) {
     return concat(parts);
 }
 
-function printArgumentsList(path, options, print) {
+function printArgumentsList(path: any, options: any, print: any) {
     var printed = path.map(print, "arguments");
     var trailingComma = util.isTrailingCommaEnabled(options, "parameters");
 
@@ -2744,7 +2807,7 @@ function printArgumentsList(path, options, print) {
     return concat(["(", joined, ")"]);
 }
 
-function printFunctionParams(path, options, print) {
+function printFunctionParams(path: any, options: any, print: any) {
     var fun = path.getValue();
 
     if (fun.params) {
@@ -2756,7 +2819,7 @@ function printFunctionParams(path, options, print) {
     }
 
     if (fun.defaults) {
-        path.each(function(defExprPath) {
+        path.each(function(defExprPath: any) {
             var i = defExprPath.getName();
             var p = printed[i];
             if (p && defExprPath.getValue()) {
@@ -2786,7 +2849,7 @@ function printFunctionParams(path, options, print) {
     return joined;
 }
 
-function printExportDeclaration(path, options, print) {
+function printExportDeclaration(path: any, options: any, print: any) {
     var decl = path.getValue();
     var parts = ["export "];
     if (decl.exportKind && decl.exportKind !== "value") {
@@ -2814,10 +2877,10 @@ function printExportDeclaration(path, options, print) {
             parts.push("{}");
 
         } else if (decl.specifiers[0].type === 'ExportDefaultSpecifier') {
-            const unbracedSpecifiers = [];
-            const bracedSpecifiers = [];
+            const unbracedSpecifiers: any[] = [];
+            const bracedSpecifiers: any[] = [];
 
-            path.each(function (specifierPath) {
+            path.each(function (specifierPath: any) {
                 const spec = specifierPath.getValue();
                 if (spec.type === "ExportDefaultSpecifier") {
                     unbracedSpecifiers.push(print(specifierPath));
@@ -2882,7 +2945,7 @@ function printExportDeclaration(path, options, print) {
     return lines;
 }
 
-function printFlowDeclaration(path, parts) {
+function printFlowDeclaration(path: any, parts: any) {
     var parentExportDecl = util.getParentExportDeclaration(path);
 
     if (parentExportDecl) {
@@ -2900,8 +2963,8 @@ function printFlowDeclaration(path, parts) {
     return concat(parts);
 }
 
-function printVariance(path, print) {
-    return path.call(function (variancePath) {
+function printVariance(path: any, print: any) {
+    return path.call(function (variancePath: any) {
         var value = variancePath.getValue();
 
         if (value) {
@@ -2920,7 +2983,7 @@ function printVariance(path, print) {
     }, "variance");
 }
 
-function adjustClause(clause, options) {
+function adjustClause(clause: any, options: any) {
     if (clause.length > 1)
         return concat([" ", clause]);
 
@@ -2930,7 +2993,7 @@ function adjustClause(clause, options) {
     ]);
 }
 
-function lastNonSpaceCharacter(lines, options) {
+function lastNonSpaceCharacter(lines: any, options: any) {
     var pos = lines.lastPos();
     var skip_ETX_STX_range = false;
     do {
@@ -2957,17 +3020,17 @@ function lastNonSpaceCharacter(lines, options) {
     } while (lines.prevPos(pos));
 }
 
-function endsWithBrace(lines, options) {
+function endsWithBrace(lines: any, options: any) {
     return lastNonSpaceCharacter(lines, options) === "}";
 }
 
-function swapQuotes(str) {
+function swapQuotes(str: string) {
     return str.replace(/['"]/g, function(m) {
         return m === '"' ? '\'' : '"';
     });
 }
 
-function nodeStr(str, options) {
+function nodeStr(str: string, options: any) {
     isString.assert(str);
     switch (options.quote) {
     case "auto":
@@ -2982,7 +3045,7 @@ function nodeStr(str, options) {
     }
 }
 
-function maybeAddSemicolon(lines, options) {
+function maybeAddSemicolon(lines: any, options: any) {
     var eoc = lastNonSpaceCharacter(lines, options);
     if (!eoc || "\n};".indexOf(eoc) < 0)
         return concat([lines, ";"]);

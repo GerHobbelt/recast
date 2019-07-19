@@ -1,10 +1,10 @@
-var assert = require("assert");
-var parse = require("../lib/parser").parse;
-var Printer = require("../lib/printer").Printer;
-var types = require("../lib/types");
+import assert from "assert";
+import { parse } from "../lib/parser";
+import { Printer } from "../lib/printer";
+import types from "../lib/types";
 var n = types.namedTypes;
 var b = types.builders;
-var eol = require("os").EOL;
+import { EOL as eol } from "os";
 
 describe("ES6 Compatability", function() {
   [
@@ -43,8 +43,6 @@ describe("ES6 Compatability", function() {
         methodDecProperty.kind,
         methodDecProperty.key,
         methodDecProperty.value,
-        false,
-        false
       );
 
       var correctMethodProperty = b.property(
@@ -57,8 +55,6 @@ describe("ES6 Compatability", function() {
           methodDecProperty.value.generator,
           methodDecProperty.value.expression
         ),
-        false,
-        false
       );
 
       assert.strictEqual(
@@ -105,7 +101,7 @@ describe("import/export syntax", function() {
 
     var printer = new Printer({ tabWidth: 2 });
 
-    function check(source) {
+    function check(source: string) {
       var ast1 = parse(source, { parser });
       var ast2 = parse(printer.printGenerically(ast1).code, { parser });
       types.astNodesAreEquivalent.assert(ast1, ast2);
@@ -176,7 +172,7 @@ describe("import/export syntax", function() {
     });
 
     pit("should forbid invalid import/export syntax", function() {
-      function checkInvalid(source, expectedMessage) {
+      function checkInvalid(source: string, expectedMessage: string) {
         try {
           parse(source, { parser });
           throw new Error("Parsing should have failed: " +

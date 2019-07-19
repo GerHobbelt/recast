@@ -1,14 +1,12 @@
-var assert = require("assert");
-var parse = require("../lib/parser").parse;
-var getReprinter = require("../lib/patcher").getReprinter;
-var Printer = require("../lib/printer").Printer;
-var linesModule = require("../lib/lines");
-var fromString = linesModule.fromString;
-var concat = linesModule.concat;
-var types = require("../lib/types");
+import assert from "assert";
+import { parse } from "../lib/parser";
+import { getReprinter } from "../lib/patcher";
+import { Printer } from "../lib/printer";
+import { fromString } from "../lib/lines";
+import types from "../lib/types";
 var namedTypes = types.namedTypes;
-var FastPath = require("../lib/fast-path");
-var eol = require("os").EOL;
+import FastPath from "../lib/fast-path";
+import { EOL as eol } from "os";
 var nodeMajorVersion = parseInt(process.versions.node, 10);
 
 // Esprima seems unable to handle unnamed top-level functions, so declare
@@ -26,7 +24,7 @@ describe("parser", function() {
     var types = require("../lib/types");
     var b = types.builders;
     var parser = {
-      parse: function(code) {
+      parse: function() {
         var program = b.program([
           b.expressionStatement(b.identifier("surprise"))
         ]);
@@ -35,7 +33,7 @@ describe("parser", function() {
       }
     };
 
-    function check(options) {
+    function check(options?: any) {
       var ast = parse("ignored", options);
       var printer = new Printer;
 
@@ -50,7 +48,7 @@ describe("parser", function() {
   });
 });
 
-function runTestsForParser([parserId, parserFactory]) {
+function runTestsForParser(parserId: string, parserFactory: function) {
   const parserName = parserId.split("/").pop();
 
   if (nodeMajorVersion < 6 &&
@@ -61,13 +59,17 @@ function runTestsForParser([parserId, parserFactory]) {
     return;
   }
 
+  if (!parserName) {
+    return;
+  }
+
   let parser = require(parserId);
   if (parserFactory) parser = parserFactory(parser);
 
   it("[" + parserName + "] empty source", function () {
     var printer = new Printer;
 
-    function check(code) {
+    function check(code: string) {
       var ast = parse(code, { parser });
       assert.strictEqual(printer.print(ast).code, code);
     }
@@ -81,7 +83,7 @@ function runTestsForParser([parserId, parserFactory]) {
     check("    ");
   });
 
-  const lineCommentTypes = {
+  const lineCommentTypes: { [name: string]: string } = {
     acorn: "Line",
     babel: "CommentLine",
     esprima: "Line",
@@ -161,7 +163,9 @@ function runTestsForParser([parserId, parserFactory]) {
 
     types.visit(ast, {
       visitFunctionDeclaration: function(path) {
-        path.node.body.body.reverse();
+        if (namedTypes.BlockStatement.check(path.node.body)) {
+          path.node.body.body.reverse();
+        }
         this.traverse(path);
       }
     });
@@ -175,11 +179,11 @@ function runTestsForParser([parserId, parserFactory]) {
   });
 
   it("[" + parserName + "] TabHandling", function() {
-    function check(code, tabWidth) {
+    function check(code: string, tabWidth: number) {
       var lines = fromString(code, { tabWidth: tabWidth });
       assert.strictEqual(lines.length, 1);
 
-      types.visit(parse(code, {
+      types.visit<{ check(s: any, loc: any): any }>(parse(code, {
         tabWidth: tabWidth,
         parser,
       }), {
@@ -215,7 +219,7 @@ function runTestsForParser([parserId, parserFactory]) {
   it("[" + parserName + "] Only comment followed by space", function () {
     const printer = new Printer;
 
-    function check(code) {
+    function check(code: string) {
       code = code.replace(/\r?\n/g, eol);
       const ast = parse(code, { parser });
       assert.strictEqual(

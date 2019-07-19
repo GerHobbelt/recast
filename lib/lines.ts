@@ -1,11 +1,12 @@
-var assert = require("assert");
-var sourceMap = require("source-map");
-var normalizeOptions = require("./options").normalize;
-var secretKey = require("private").makeUniqueKey();
-var types = require("./types");
+import assert from "assert";
+import sourceMap from "source-map";
+import { normalize as normalizeOptions } from "./options";
+import { makeUniqueKey } from "private";
+var secretKey = makeUniqueKey();
+import types from "./types";
 var isString = types.builtInTypes.string;
-var comparePos = require("./util").comparePos;
-var Mapping = require("./mapping");
+import { comparePos } from "./util";
+import Mapping from "./mapping";
 
 // Goals:
 // 1. Minimize new string creation.
@@ -15,16 +16,58 @@ var Mapping = require("./mapping");
 // 5. No newline characters.
 
 var useSymbol = typeof Symbol === "function";
+// @ts-ignore Subsequent variable declarations must have the same type.
 var secretKey = "recastLinesSecret";
 if (useSymbol) {
   secretKey = Symbol.for(secretKey);
 }
 
-function getSecret(lines) {
+function getSecret(lines: any) {
   return lines[secretKey];
 }
 
-function Lines(infos, sourceFileName) {
+export type Pos = { line: number, column: number };
+
+export interface LinesType {
+  length: any;
+  name: any;
+  toString(options?: any): any;
+  getSourceMap(sourceMapName: any, sourceRoot: any): any;
+  bootstrapCharAt(pos: any): any;
+  charAt(pos: any): any;
+  stripMargin(width: any, skipFirstLine: any): any;
+  indent(by: number): any;
+  indentTail(by: any): any;
+  lockIndentTail (): any;
+  getIndentAt(line: any): any;
+  guessTabWidth(): any;
+  startsWithComment (): any;
+  isOnlyWhitespace(): any;
+  isPrecededOnlyByWhitespace(pos: any): any;
+  getLineLength(line: any): any;
+  nextPos(pos: any, skipSpaces?: any): any;
+  prevPos(pos: any, skipSpaces?: any): any;
+  firstPos(): Pos;
+  lastPos(): Pos;
+  skipSpaces(pos: any, backward?: any, modifyInPlace?: any): any;
+  trimLeft(): any;
+  trimRight(): any;
+  trim(): any;
+  eachPos(callback: (pos: Pos) => any, startPos?: any, skipSpaces?: any): any;
+  bootstrapSlice(start: any, end: any): any;
+  slice(start?: Pos, end?: Pos): LinesType;
+  bootstrapSliceString(start: any, end: any, options: any): any;
+  sliceString(start: any, end: any, options?: any): any;
+  isEmpty(): any;
+  join(elements: any): any;
+  concat(...args: any[]): any;
+}
+
+interface LinesConstructor {
+  new(infos: any, sourceFileName?: any): LinesType;
+}
+
+const Lines = function Lines(this: LinesType, infos: any, sourceFileName?: any) {
   assert.ok(this instanceof Lines);
   assert.ok(infos.length > 0);
 
@@ -50,9 +93,13 @@ function Lines(infos, sourceFileName) {
       end: this.lastPos()
     }));
   }
-}
+} as any as LinesConstructor;
 
-function setSymbolOrKey(obj, key, value) {
+// Exposed for instanceof checks. The fromString function should be used
+// to create new Lines objects.
+export { Lines };
+
+function setSymbolOrKey(obj: any, key: any, value: any) {
   if (useSymbol) {
     return obj[key] = value;
   }
@@ -67,12 +114,9 @@ function setSymbolOrKey(obj, key, value) {
   return value;
 }
 
-// Exposed for instanceof checks. The fromString function should be used
-// to create new Lines objects.
-exports.Lines = Lines;
-var Lp = Lines.prototype;
+var Lp: LinesType = Lines.prototype;
 
-function copyLineInfo(info) {
+function copyLineInfo(info: any) {
   return {
     line: info.line,
     indent: info.indent,
@@ -82,11 +126,11 @@ function copyLineInfo(info) {
   };
 }
 
-var fromStringCache = {};
+var fromStringCache: any = {};
 var hasOwn = fromStringCache.hasOwnProperty;
 var maxCacheKeyLen = 10;
 
-function countSpaces(spaces, tabWidth) {
+export function countSpaces(spaces: any, tabWidth?: number) {
   var count = 0;
   var len = spaces.length;
 
@@ -94,11 +138,11 @@ function countSpaces(spaces, tabWidth) {
     switch (spaces.charCodeAt(i)) {
     case 9: // '\t'
       assert.strictEqual(typeof tabWidth, "number");
-      assert.ok(tabWidth > 0);
+      assert.ok(tabWidth! > 0);
 
-      var next = Math.ceil(count / tabWidth) * tabWidth;
+      var next = Math.ceil(count / tabWidth!) * tabWidth!;
       if (next === count) {
-        count += tabWidth;
+        count += tabWidth!;
       } else {
         count = next;
       }
@@ -121,7 +165,6 @@ function countSpaces(spaces, tabWidth) {
 
   return count;
 }
-exports.countSpaces = countSpaces;
 
 var leadingSpaceExp = /^\s*/;
 
@@ -132,7 +175,7 @@ var lineTerminatorSeqExp =
 /**
  * @param {Object} options - Options object that configures printing.
  */
-function fromString(string, options) {
+export function fromString(string: string | LinesType, options?: any): LinesType {
   if (string instanceof Lines)
     return string;
 
@@ -151,7 +194,8 @@ function fromString(string, options) {
 
   var ls = string.split(lineTerminatorSeqExp);
   ls = ls.map(function(line, index) {
-    var spaces = leadingSpaceExp.exec(line)[0];
+    // TODO: handle null exec result
+    var spaces = leadingSpaceExp.exec(line)![0];
     return {
       line: line,
       carriesContent: line.length - spaces.length,
@@ -218,9 +262,8 @@ function fromString(string, options) {
 
   return lines;
 }
-exports.fromString = fromString;
 
-function isOnlyWhitespace(string) {
+function isOnlyWhitespace(string: string) {
   return !/\S/.test(string);
 }
 
@@ -238,7 +281,7 @@ Lp.getSourceMap = function(sourceMapName, sourceRoot) {
 
   var targetLines = this;
 
-  function updateJSON(json) {
+  function updateJSON(json?: any) {
     json = json || {};
 
     isString.assert(sourceMapName);
@@ -262,9 +305,9 @@ Lp.getSourceMap = function(sourceMapName, sourceRoot) {
   }
 
   var smg = new sourceMap.SourceMapGenerator(updateJSON());
-  var sourcesToContents = {};
+  var sourcesToContents: any = {};
 
-  secret.mappings.forEach(function(mapping) {
+  secret.mappings.forEach(function(mapping: any) {
     var sourceCursor = mapping.sourceLines.skipSpaces(
       mapping.sourceLoc.start
     ) || mapping.sourceLines.lastPos();
@@ -304,7 +347,7 @@ Lp.getSourceMap = function(sourceMapName, sourceRoot) {
 
   secret.cachedSourceMap = smg;
 
-  return smg.toJSON();
+  return (smg as any).toJSON();
 };
 
 Lp.bootstrapCharAt = function(pos) {
@@ -372,7 +415,7 @@ Lp.stripMargin = function(width, skipFirstLine) {
 
   var secret = getSecret(this);
 
-  var lines = new Lines(secret.infos.map(function(info, i) {
+  var lines = new Lines(secret.infos.map(function(info: any, i: any) {
     if (info.line && (i > 0 || !skipFirstLine)) {
       info = copyLineInfo(info);
       info.indent = Math.max(0, info.indent - width);
@@ -383,7 +426,7 @@ Lp.stripMargin = function(width, skipFirstLine) {
   if (secret.mappings.length > 0) {
     var newMappings = getSecret(lines).mappings;
     assert.strictEqual(newMappings.length, 0);
-    secret.mappings.forEach(function(mapping) {
+    secret.mappings.forEach(function(mapping: any) {
       newMappings.push(mapping.indent(width, skipFirstLine, true));
     });
   }
@@ -397,7 +440,7 @@ Lp.indent = function(by) {
 
   var secret = getSecret(this);
 
-  var lines = new Lines(secret.infos.map(function(info) {
+  var lines = new Lines(secret.infos.map(function(info: any) {
     if (info.line && ! info.locked) {
       info = copyLineInfo(info);
       info.indent += by;
@@ -408,7 +451,7 @@ Lp.indent = function(by) {
   if (secret.mappings.length > 0) {
     var newMappings = getSecret(lines).mappings;
     assert.strictEqual(newMappings.length, 0);
-    secret.mappings.forEach(function(mapping) {
+    secret.mappings.forEach(function(mapping: any) {
       newMappings.push(mapping.indent(by));
     });
   }
@@ -425,7 +468,7 @@ Lp.indentTail = function(by) {
 
   var secret = getSecret(this);
 
-  var lines = new Lines(secret.infos.map(function(info, i) {
+  var lines = new Lines(secret.infos.map(function(info: any, i: any) {
     if (i > 0 && info.line && ! info.locked) {
       info = copyLineInfo(info);
       info.indent += by;
@@ -437,7 +480,7 @@ Lp.indentTail = function(by) {
   if (secret.mappings.length > 0) {
     var newMappings = getSecret(lines).mappings;
     assert.strictEqual(newMappings.length, 0);
-    secret.mappings.forEach(function(mapping) {
+    secret.mappings.forEach(function(mapping: any) {
       newMappings.push(mapping.indent(by, true));
     });
   }
@@ -452,7 +495,7 @@ Lp.lockIndentTail = function () {
 
   var infos = getSecret(this).infos;
 
-  return new Lines(infos.map(function (info, i) {
+  return new Lines(infos.map(function (info: any, i: any) {
     info = copyLineInfo(info);
     info.locked = i > 0;
     return info;
@@ -472,7 +515,7 @@ Lp.guessTabWidth = function() {
     return secret.cachedTabWidth;
   }
 
-  var counts = []; // Sparse array.
+  var counts: any[] = []; // Sparse array.
   var lastIndent = 0;
 
   for (var line = 1, last = this.length; line <= last; ++line) {
@@ -708,6 +751,10 @@ Lp.slice = function(start, end) {
     end = this.lastPos();
   }
 
+  if (!start) {
+    throw new Error("cannot slice with end but not start");
+  }
+
   var secret = getSecret(this);
   var sliced = secret.infos.slice(start.line - 1, end.line);
 
@@ -724,7 +771,7 @@ Lp.slice = function(start, end) {
   if (secret.mappings.length > 0) {
     var newMappings = getSecret(lines).mappings;
     assert.strictEqual(newMappings.length, 0);
-    secret.mappings.forEach(function(mapping) {
+    secret.mappings.forEach(function(this: any, mapping: any) {
       var sliced = mapping.slice(this, start, end);
       if (sliced) {
         newMappings.push(sliced);
@@ -735,7 +782,7 @@ Lp.slice = function(start, end) {
   return lines;
 };
 
-function sliceInfo(info, startCol, endCol) {
+function sliceInfo(info: any, startCol: number, endCol?: number) {
   var sliceStart = info.sliceStart;
   var sliceEnd = info.sliceEnd;
   var indent = Math.max(info.indent, 0);
@@ -867,11 +914,11 @@ Lp.isEmpty = function() {
 Lp.join = function(elements) {
   var separator = this;
   var separatorSecret = getSecret(separator);
-  var infos = [];
-  var mappings = [];
-  var prevInfo;
+  var infos: any[] = [];
+  var mappings: any[] = [];
+  var prevInfo: any;
 
-  function appendSecret(secret) {
+  function appendSecret(secret: any) {
     if (secret === null)
       return;
 
@@ -893,7 +940,7 @@ Lp.join = function(elements) {
       prevInfo.sliceEnd = prevInfo.line.length;
 
       if (secret.mappings.length > 0) {
-        secret.mappings.forEach(function(mapping) {
+        secret.mappings.forEach(function(mapping: any) {
           mappings.push(mapping.add(prevLine, prevColumn));
         });
       }
@@ -902,7 +949,7 @@ Lp.join = function(elements) {
       mappings.push.apply(mappings, secret.mappings);
     }
 
-    secret.infos.forEach(function(info, i) {
+    secret.infos.forEach(function(info: any, i: any) {
       if (!prevInfo || i > 0) {
         prevInfo = copyLineInfo(info);
         infos.push(prevInfo);
@@ -910,13 +957,13 @@ Lp.join = function(elements) {
     });
   }
 
-  function appendWithSeparator(secret, i) {
+  function appendWithSeparator(secret: any, i: any) {
     if (i > 0)
       appendSecret(separatorSecret);
     appendSecret(secret);
   }
 
-  elements.map(function(elem) {
+  elements.map(function(elem: any) {
     var lines = fromString(elem);
     if (lines.isEmpty())
       return null;
@@ -935,13 +982,12 @@ Lp.join = function(elements) {
   return lines;
 };
 
-exports.concat = function(elements) {
+export function concat(elements: any) {
   return emptyLines.join(elements);
 };
 
-Lp.concat = function(other) {
-  var args = arguments,
-  list = [this];
+Lp.concat = function(...args) {
+  var list = [this];
   list.push.apply(list, args);
   assert.strictEqual(list.length, args.length + 1);
   return emptyLines.join(list);

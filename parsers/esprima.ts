@@ -7,15 +7,11 @@
 //     parser: require("recast/parsers/esprima")
 //   });
 //
-const getOption = require("../lib/util.js").getOption;
+import { getOption } from "../lib/util";
 
-exports.parse = function (source, options) {
-  return exports.__parseInternal(source, options);
-};
-
-// required by unit tests to pass additional options to esprima
-exports.__parseInternal = function (source, options, extraOptions) {
-  const comments = [];
+// `extraOptions` required by unit tests to pass additional options to esprima
+export function parse(source: string, options?: any, extraOptions: any) {
+  const comments: any[] = [];
   const ast = require("@gerhobbelt/esprima").parse(source, {
     loc: true,
     locations: true,
@@ -27,7 +23,7 @@ exports.__parseInternal = function (source, options, extraOptions) {
     ...extraOptions
   });
 
-  if (! Array.isArray(ast.comments)) {
+  if (!Array.isArray(ast.comments)) {
     ast.comments = comments;
   }
 

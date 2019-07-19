@@ -1,11 +1,13 @@
-var assert = require("assert");
-var recast = require("..");
-var parse = require("../lib/parser").parse;
-var Printer = require("../lib/printer").Printer;
-var n = require("../lib/types").namedTypes;
-var b = require("../lib/types").builders;
-var fromString = require("../lib/lines").fromString;
-var eol = require("os").EOL;
+import assert from "assert";
+import recast from "../main";
+import { parse } from "../lib/parser";
+import { Printer } from "../lib/printer";
+import types from "../lib/types";
+var n = types.namedTypes;
+var b = types.builders;
+import { fromString } from "../lib/lines";
+import { EOL as eol } from "os";
+var linesModule = require("../lib/lines");
 var nodeMajorVersion = parseInt(process.versions.node, 10);
 
 describe("printer", function() {
@@ -333,7 +335,7 @@ describe("printer", function() {
       "var x, y, z;"
     );
 
-    var z = varDecl.declarations.pop();
+    var z: any = varDecl.declarations.pop();
     varDecl.declarations.pop();
     varDecl.declarations.push(z);
 
@@ -481,11 +483,9 @@ describe("printer", function() {
       b.blockStatement([]),
       false,
       false,
-      false,
-      undefined
     );
 
-    funExpr.defaults = [undefined, b.literal(1)];
+    funExpr.defaults = [null, b.literal(1)];
     funExpr.rest = b.identifier('d');
 
     assert.strictEqual(
@@ -496,12 +496,9 @@ describe("printer", function() {
     var arrowFunExpr = b.arrowFunctionExpression(
       [b.identifier('b'), b.identifier('c')],
       b.blockStatement([]),
-      false,
-      false,
-      false,
-      undefined);
+      false);
 
-    arrowFunExpr.defaults = [undefined, b.literal(1)];
+    arrowFunExpr.defaults = [null, b.literal(1)];
     arrowFunExpr.rest = b.identifier('d');
 
     assert.strictEqual(
@@ -625,8 +622,6 @@ describe("printer", function() {
       [],
       b.blockStatement(ast.program.body)
     );
-
-    var linesModule = require("../lib/lines");
 
     assert.strictEqual(
       printer.print(funDecl).code,
@@ -1402,7 +1397,7 @@ describe("printer", function() {
     var lines = fromString(code);
     var ast = parse(code, {
       esprima: {
-        parse: function(source, options) {
+        parse: function(source: string, options?: any) {
           var program = require("@gerhobbelt/esprima").parse(source, options);
           n.Program.assert(program);
           // Expand ast.program.loc to include any
@@ -1494,11 +1489,11 @@ describe("printer", function() {
 
     recast.visit(ast, {
       visitTaggedTemplateExpression: function (path) {
-        function replaceIdWithNodeId(path) {
+        function replaceIdWithNodeId(path: any) {
           path.replace(path.value.replace(/\bid\b/g, "nodeID"));
         }
 
-        path.get("quasi", "quasis").each(function (quasiPath) {
+        path.get("quasi", "quasis").each(function (quasiPath: any) {
           replaceIdWithNodeId(quasiPath.get("value", "cooked"));
           replaceIdWithNodeId(quasiPath.get("value", "raw"));
         });
@@ -1567,7 +1562,6 @@ describe("printer", function() {
           b.identifier('key'),
           b.stringTypeAnnotation(),
           b.stringTypeAnnotation(),
-          false
         )
       ])
     );
@@ -1632,7 +1626,7 @@ describe("printer", function() {
     var babelParser = require("@gerhobbelt/babel-parser");
     var parseOptions = {
       parser: {
-        parse: function (source) {
+        parse: function (source: string) {
           return babelParser.parse(source, {
             sourceType: 'module',
             plugins: ['flow'],
@@ -1703,7 +1697,7 @@ describe("printer", function() {
   });
 
   it("prints no extra semicolons in for-loop heads (#377)", function () {
-    function check(head, parser) {
+    function check(head: any, parser: any) {
       var source = "for (" + head + ") console.log(i);";
       var ast = recast.parse(source, { parser: parser });
       var loop = ast.program.body[0];
@@ -1726,7 +1720,7 @@ describe("printer", function() {
       assert.strictEqual(newHead.split(";").length, 3);
     }
 
-    function checkWith(parser) {
+    function checkWith(parser: any) {
       check("let i = 0; i < 1; i++", parser);
       check("let i = 0 ; i < 1; i++", parser);
       check("let i = 0; ; i++", parser);
@@ -1861,6 +1855,219 @@ describe("printer", function() {
       arrowParensAlways: true
     });
     var pretty = printer.print(ast).code;
+    assert.strictEqual(pretty, code);
+  });
+
+  it("prints flow object type internal slots correctly", function() {
+    var code = [
+      'type MyObjectType = {',
+      '  [myIndexer: string]: any,',
+      '  (myParameter: any): any,',
+      '  (myOptionalParameter?: any): any,',
+      '  (myParameterWithRest: any, ...rest: any[]): any,',
+      '  [[myInternalSlot]]: any,',
+      '  static [[myStaticOptionalInternalSlot]]?: (arg: any) => any,',
+      '  static [[myStaticMethodOptionalInternalSlot]]?(arg: any): any,',
+      '  myProperty: any,',
+      '};',
+    ].join(eol);
+
+    var ast = b.program([
+      b.typeAlias(
+        b.identifier('MyObjectType'),
+        null,
+        b.objectTypeAnnotation.from({
+          properties: [
+            b.objectTypeProperty(b.identifier("myProperty"), b.anyTypeAnnotation(), false)
+          ],
+          indexers: [
+            b.objectTypeIndexer(
+              b.identifier("myIndexer"),
+              b.stringTypeAnnotation(),
+              b.anyTypeAnnotation()
+            )
+          ],
+          callProperties: [
+            b.objectTypeCallProperty(
+              b.functionTypeAnnotation(
+                [
+                  b.functionTypeParam(
+                    b.identifier("myParameter"),
+                    b.anyTypeAnnotation(),
+                    false,
+                  )
+                ],
+                b.anyTypeAnnotation(),
+                null,
+                null
+              )
+            ),
+            b.objectTypeCallProperty(
+              b.functionTypeAnnotation(
+                [
+                  b.functionTypeParam(
+                    b.identifier("myOptionalParameter"),
+                    b.anyTypeAnnotation(),
+                    true,
+                  )
+                ],
+                b.anyTypeAnnotation(),
+                null,
+                null
+              )
+            ),
+            b.objectTypeCallProperty(
+              b.functionTypeAnnotation(
+                [
+                  b.functionTypeParam(
+                    b.identifier("myParameterWithRest"),
+                    b.anyTypeAnnotation(),
+                    false,
+                  )
+                ],
+                b.anyTypeAnnotation(),
+                b.functionTypeParam(
+                  b.identifier("rest"),
+                  b.arrayTypeAnnotation(b.anyTypeAnnotation()),
+                  false
+                ),
+                null
+              )
+            )
+          ],
+          internalSlots: [
+            b.objectTypeInternalSlot.from({
+              id: b.identifier("myInternalSlot"),
+              value: b.anyTypeAnnotation(),
+              static: false,
+              method: false,
+              optional: false,
+            }),
+            b.objectTypeInternalSlot.from({
+              id: b.identifier("myStaticOptionalInternalSlot"),
+              value: b.functionTypeAnnotation([
+                b.functionTypeParam(b.identifier("arg"), b.anyTypeAnnotation(), false)
+              ], b.anyTypeAnnotation(), null, null),
+              static: true,
+              method: false,
+              optional: true,
+            }),
+            b.objectTypeInternalSlot.from({
+              id: b.identifier("myStaticMethodOptionalInternalSlot"),
+              value: b.functionTypeAnnotation([
+                b.functionTypeParam(b.identifier("arg"), b.anyTypeAnnotation(), false)
+              ], b.anyTypeAnnotation(), null, null),
+              static: true,
+              method: true,
+              optional: true,
+            }),
+          ],
+        })
+      ),
+    ]);
+
+    var printer = new Printer({
+      tabWidth: 2,
+      wrapColumn: 40,
+      trailingComma: true,
+    });
+
+    var pretty = printer.printGenerically(ast).code;
+    assert.strictEqual(pretty, code);
+  });
+
+  it("prints class private methods and properties correctly", function() {
+    var code = [
+      'class MyClassWithPrivate {',
+      '  #myPrivateProperty: any;',
+      '  #myPrivatePropertyWithValue: any = value;',
+      '  #myPrivateMethod() {}',
+      '}',
+    ].join(eol);
+
+    var ast = b.program([
+      b.classDeclaration(
+        b.identifier("MyClassWithPrivate"),
+        b.classBody([
+          b.classPrivateProperty.from({
+            key: b.privateName(b.identifier("myPrivateProperty")),
+            typeAnnotation: b.typeAnnotation(b.anyTypeAnnotation()),
+            value: null,
+          }),
+          b.classPrivateProperty.from({
+            key: b.privateName(b.identifier("myPrivatePropertyWithValue")),
+            typeAnnotation: b.typeAnnotation(b.anyTypeAnnotation()),
+            value: b.identifier("value"),
+          }),
+          b.classPrivateMethod(
+            b.privateName(b.identifier("myPrivateMethod")),
+            [],
+            b.blockStatement([]),
+          ),
+        ])
+      ),
+    ]);
+
+    var printer = new Printer({
+      tabWidth: 2,
+      wrapColumn: 40,
+      trailingComma: true,
+    });
+
+    var pretty = printer.printGenerically(ast).code;
+    assert.strictEqual(pretty, code);
+  });
+
+  it("prints an interpreter directive correctly", function() {
+    var code = [
+      '#!/usr/bin/env node',
+      'console.log("Hello, world!");'
+    ].join(eol);
+
+    var ast = b.program.from({
+      interpreter: b.interpreterDirective("/usr/bin/env node"),
+      body: [
+        b.expressionStatement(
+          b.callExpression(
+            b.memberExpression(b.identifier("console"), b.identifier("log")),
+            [b.stringLiteral("Hello, world!")]
+          )
+        )
+      ],
+    });
+
+    var pretty = new Printer().printGenerically(ast).code;
+    assert.strictEqual(pretty, code);
+  });
+
+  it("prints an interface type annotation correctly", function() {
+    var code = [
+      'let myVar: interface extends MyOtherInterface { myProperty: any };',
+    ].join(eol);
+
+    var ast = b.program([
+      b.variableDeclaration("let", [
+        b.variableDeclarator(
+          b.identifier.from({
+            name: "myVar",
+            typeAnnotation: b.typeAnnotation(
+              b.interfaceTypeAnnotation(
+                b.objectTypeAnnotation([
+                  b.objectTypeProperty(
+                    b.identifier("myProperty"),
+                    b.anyTypeAnnotation(),
+                    false,
+                  )
+                ]),
+                [b.interfaceExtends(b.identifier("MyOtherInterface"))],
+              )
+            )
+          }),
+        )
+      ])
+    ]);
+
+    var pretty = new Printer().printGenerically(ast).code;
     assert.strictEqual(pretty, code);
   });
 });
