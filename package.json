@@ -12,7 +12,7 @@
     "parsing",
     "pretty-printing"
   ],
-  "version": "0.15.3-33",
+  "version": "0.15.4-33",
   "homepage": "http://github.com/benjamn/recast",
   "repository": {
     "type": "git",
@@ -41,10 +41,10 @@
     "@babel/parser": "7.0.0-beta.54",
     "@babel/preset-env": "7.0.0-beta.54",
     "esprima-fb": "15001.1001.0-dev-harmony-fb",
-    "flow-parser": "0.74.0",
+    "flow-parser": "0.80.0",
     "glob": "7.1.2",
     "mocha": "5.2.0",
-    "reify": "0.16.2",
+    "reify": "0.17.3",
     "semver": "5.5.0"
   },
   "engines": {
