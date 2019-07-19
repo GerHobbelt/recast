@@ -23,7 +23,7 @@ exports.__parseInternal = function (source, options, extraOptions) {
     onComment: comments,
     range: getOption(options, "range", false),
     tolerant: getOption(options, "tolerant", true),
-    tokens: getOption(options, "tokens", true),
+    tokens: true,                      // getOption(options, "tokens", true),
     ...extraOptions
   });
 

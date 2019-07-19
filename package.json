@@ -1,6 +1,7 @@
 {
   "author": "Ben Newman <bn@cs.stanford.edu>",
   "name": "@gerhobbelt/recast",
+  "version": "0.16.0-33",
   "description": "JavaScript syntax tree transformer, nondestructive pretty-printer, and automatic source map generator",
   "keywords": [
     "ast",
@@ -12,7 +13,6 @@
     "parsing",
     "pretty-printing"
   ],
-  "version": "0.15.5-33",
   "homepage": "http://github.com/benjamn/recast",
   "repository": {
     "type": "git",
@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@gerhobbelt/babel-parser": "7.0.0-beta.49",
-    "@gerhobbelt/ast-types": "0.11.5-23",
+    "@gerhobbelt/ast-types": "0.11.6-23",
     "@gerhobbelt/esprima": "4.0.1-24",
     "core-js": "2.5.7",
     "private": "0.1.8",
@@ -41,10 +41,10 @@
     "@babel/parser": "7.0.0-beta.54",
     "@babel/preset-env": "7.0.0-beta.54",
     "esprima-fb": "15001.1001.0-dev-harmony-fb",
-    "flow-parser": "0.80.0",
+    "flow-parser": "0.83.0",
     "glob": "7.1.2",
     "mocha": "5.2.0",
-    "reify": "0.17.3",
+    "reify": "0.18.0",
     "semver": "5.5.0"
   },
   "engines": {

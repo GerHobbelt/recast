@@ -15,17 +15,11 @@ var nodeMajorVersion = parseInt(process.versions.node, 10);
 // test functions with names and then export them later.
 
 describe("parser", function() {
-  [["../parsers/acorn"],
-   ["../parsers/babylon"],
-   ["../parsers/esprima", function(p) {
-    return {
-      parse: function(source, options) {
-        return p.__parseInternal(source, options, {range: true});
-      }
-    }
-  }],
-   ["../parsers/flow"],
-   ["../parsers/typescript"],
+  ["../parsers/acorn",
+   "../parsers/babel",
+   "../parsers/esprima",
+   "../parsers/flow",
+   "../parsers/typescript",
   ].forEach(runTestsForParser);
 
   it("AlternateParser", function() {
@@ -60,7 +54,7 @@ function runTestsForParser([parserId, parserFactory]) {
   const parserName = parserId.split("/").pop();
 
   if (nodeMajorVersion < 6 &&
-      (parserName === "babylon" ||
+      (parserName === "babel" ||
        parserName === "flow" ||
        parserName === "typescript")) {
     // Babel 7 no longer supports Node 4 or 5.
@@ -89,7 +83,7 @@ function runTestsForParser([parserId, parserFactory]) {
 
   const lineCommentTypes = {
     acorn: "Line",
-    babylon: "CommentLine",
+    babel: "CommentLine",
     esprima: "Line",
     flow: "CommentLine",
     typescript: "CommentLine"

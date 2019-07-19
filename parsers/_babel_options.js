@@ -11,7 +11,7 @@ module.exports = function (options) {
     allowImportExportEverywhere: true,
     allowReturnOutsideFunction: true,
     startLine: 1,
-    tokens: getOption(options, "tokens", true),
+    tokens: true,                   // getOption(options, "tokens", true),
     ranges: getOption(options, "range", true),
     plugins: [
       // The "*" glob no longer seems to include the following plugins:

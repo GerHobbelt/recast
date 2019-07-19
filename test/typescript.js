@@ -299,7 +299,7 @@ describe("TypeScript", function() {
 
 testReprinting(
   "data/babel-parser/test/fixtures/typescript/**/input.js",
-  "Reprinting Babylon TypeScript test fixtures"
+  "Reprinting @babel/parser TypeScript test fixtures"
 );
 
 testReprinting(
@@ -315,7 +315,8 @@ function testReprinting(pattern, description) {
     });
     sourcePaths.forEach(file => it(file, function () {
       if (file.indexOf("/tsx/") >= 0 ||
-          file.endsWith("stitching/errors.ts")) {
+          file.endsWith("stitching/errors.ts") ||
+          file.endsWith("decorators/type-arguments-invalid/input.js")) {
         return;
       }
 
