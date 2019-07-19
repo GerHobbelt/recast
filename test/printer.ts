@@ -1383,7 +1383,6 @@ describe("printer", function() {
     assert.strictEqual(pretty, code);
   });
 
-  
   it("preserves parenthesis around single arrow function arg", function() {
     var code = "const b = (a) => {};";
     var ast = parse(code);

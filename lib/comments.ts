@@ -102,7 +102,6 @@ function decorateComment(node: any, comment: any, lines: any) {
       continue;
     }
 
-        return;
     throw new Error("Comment location overlaps with node location");
   }
 
@@ -163,7 +162,7 @@ export function attach(comments: any[], ast: any, lines: any) {
       breakTies(tiesToBreak, lines);
       addDanglingComment(en, comment);
 
-        } else if (0) {
+    } else {
       throw new Error("AST contains no nodes at all?");
     }
   });
@@ -351,11 +350,11 @@ export function printComments(path: any, options: any, print: any) {
     var trailing = types.getFieldValue(comment, "trailing");
 
     if (leading || (trailing && !(n.Statement.check(value) ||
-                                      comment.type === "Line" ||
+                                  comment.type === "Line" ||
                                   comment.type === "Block" ||
                                   comment.type === "CommentBlock"))) {
-            leadingParts.push(concat(printLeadingComment(commentPath, print)));
-        } else /* if (trailing) */ {
+      leadingParts.push(concat(printLeadingComment(commentPath, print)));
+    } else /* if (trailing) */ {
             if (hotfixCommentInEmptyBlock === 1) {
                 trailingParts.push("{");
                 hotfixCommentInEmptyBlock = 2;

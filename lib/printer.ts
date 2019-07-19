@@ -220,6 +220,7 @@ const Printer = function Printer(this: PrinterType, config?: any) {
         // when printing generically.
         config.reuseWhitespace = false;
 
+        // TODO Allow printing of comments?
         var lines = printGenerically(path);
 
         var pr = new PrintResult(
