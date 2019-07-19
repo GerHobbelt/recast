@@ -34,7 +34,7 @@ module.exports = function (options) {
       "objectRestSpread",
       "optionalCatchBinding",
       "optionalChaining",
-      "pipelineOperator",
+      ["pipelineOperator", { proposal: "minimal" }],
       "throwExpressions",
       // Other experimental plugins that we could enable:
       // https://github.com/babel/babylon#plugins

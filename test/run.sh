@@ -26,8 +26,7 @@ then
     fi
     git clone --depth 1 https://github.com/apollographql/graphql-tools.git /tmp/graphql-tools
     pushd /tmp/graphql-tools
-    git fetch origin refs/pull/807/merge:pull/807/merge
-    git checkout pull/807/merge
+    git reset --hard 90e37c477225e56edfacc9f2a1a8336c766de93b
     popd
     mv /tmp/graphql-tools/src \
        graphql-tools-src
