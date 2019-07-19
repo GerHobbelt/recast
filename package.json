@@ -1,7 +1,7 @@
 {
   "author": "Ben Newman <bn@cs.stanford.edu>",
   "name": "@gerhobbelt/recast",
-  "version": "0.16.0-33",
+  "version": "0.16.1-33",
   "description": "JavaScript syntax tree transformer, nondestructive pretty-printer, and automatic source map generator",
   "keywords": [
     "ast",
