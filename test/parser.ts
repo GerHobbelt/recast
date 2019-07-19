@@ -3,7 +3,7 @@ import { parse } from "../lib/parser";
 import { getReprinter } from "../lib/patcher";
 import { Printer } from "../lib/printer";
 import { fromString } from "../lib/lines";
-import types from "../lib/types";
+import * as types from "ast-types";
 var namedTypes = types.namedTypes;
 import FastPath from "../lib/fast-path";
 import { EOL as eol } from "os";
@@ -21,7 +21,6 @@ describe("parser", function() {
   ].forEach(runTestsForParser);
 
   it("AlternateParser", function() {
-    var types = require("../lib/types");
     var b = types.builders;
     var parser = {
       parse: function() {
@@ -183,24 +182,24 @@ function runTestsForParser(parserId: string, parserFactory: function) {
       var lines = fromString(code, { tabWidth: tabWidth });
       assert.strictEqual(lines.length, 1);
 
-      types.visit<{ check(s: any, loc: any): any }>(parse(code, {
+      function checkId(s: any, loc: types.namedTypes.SourceLocation) {
+        var sliced = lines.slice(loc.start, loc.end);
+        assert.strictEqual(s + "", sliced.toString());
+      }
+
+      types.visit(parse(code, {
         tabWidth: tabWidth,
         parser,
       }), {
-        check: function(s, loc) {
-          var sliced = lines.slice(loc.start, loc.end);
-          assert.strictEqual(s + "", sliced.toString());
-        },
-
-        visitIdentifier: function(path) {
+        visitIdentifier(path) {
           var ident = path.node;
-          this.check(ident.name, ident.loc);
+          checkId(ident.name, ident.loc!);
           this.traverse(path);
         },
 
-        visitLiteral: function(path) {
+        visitLiteral(path) {
           var lit = path.node;
-          this.check(lit.value, lit.loc);
+          checkId(lit.value, lit.loc!);
           this.traverse(path);
         }
       });

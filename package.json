@@ -1,7 +1,7 @@
 {
   "author": "Ben Newman <bn@cs.stanford.edu>",
   "name": "@gerhobbelt/recast",
-  "version": "0.17.1-33",
+  "version": "0.18.1-33",
   "description": "JavaScript syntax tree transformer, nondestructive pretty-printer, and automatic source map generator",
   "keywords": [
     "ast",
@@ -25,8 +25,8 @@
     "tsc": "tsc --noEmit",
     "mocha": "bash -c test/run.sh",
     "debug": "bash -c -- test/run.sh --inspect-brk",
-    "test": "npm run tsc && npm run mocha",
-    "build": "tsc && ts-add-module-exports",
+    "test": "npm run build && npm run mocha",
+    "build": "npm run clean && tsc && ts-add-module-exports",
     "clean": "ts-emit-clean",
     "prepack": "npm run clean && npm run build",
     "postpack": "npm run clean",

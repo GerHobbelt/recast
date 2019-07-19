@@ -1,7 +1,7 @@
 import assert from "assert";
 import { parse } from "../lib/parser";
 import { Printer } from "../lib/printer";
-import types from "../lib/types";
+import * as types from "ast-types";
 import { EOL as eol } from "os";
 
 describe("type syntax", function() {
@@ -125,5 +125,18 @@ describe("type syntax", function() {
 
     // Bounded polymorphism
     check("class A<T: number> {}");
+
+    // Inexact object types
+    check(
+      "type InexactFoo = { foo: number; ... };",
+      flowParserParseOptions,
+    );
+    check([
+      "type MultiLineInexact = {",
+      "  reallyLongPropertyNameOyezOyezOyezFiddlyFeeDiDumDeDoo: VeryLongTypeName<With, Generic, Type, Parameters>;",
+      "  somewhatShorterButStillNotVeryShortPropertyName: string;",
+      "  ...",
+      "};"
+    ].join(eol), flowParserParseOptions);
   });
 });

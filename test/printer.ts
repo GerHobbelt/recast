@@ -1,8 +1,8 @@
 import assert from "assert";
-import recast from "../main";
+import * as recast from "../main";
 import { parse } from "../lib/parser";
 import { Printer } from "../lib/printer";
-import types from "../lib/types";
+import * as types from "ast-types";
 var n = types.namedTypes;
 var b = types.builders;
 import { fromString } from "../lib/lines";
@@ -534,6 +534,12 @@ describe("printer", function() {
     assert.strictEqual(printer.printGenerically(ast).code, code + ";");
 
     code = "export function foo() {}";
+    ast = parse(code);
+
+    assert.strictEqual(printer.print(ast).code, code);
+    assert.strictEqual(printer.printGenerically(ast).code, code);
+
+    code = 'export * from "./lib";';
     ast = parse(code);
 
     assert.strictEqual(printer.print(ast).code, code);
@@ -1759,6 +1765,30 @@ describe("printer", function() {
     assert.strictEqual(
       recast.print(babelNode).code,
       "(1).foo"
+    );
+  });
+
+  it("obeys 'optional' property of OptionalMemberExpression", function () {
+    var node = b.optionalMemberExpression(
+      b.identifier('foo'),
+      b.identifier('bar')
+    );
+
+    assert.strictEqual(
+      recast.print(node).code,
+      "foo?.bar"
+    );
+
+    var nonOptionalNode = b.optionalMemberExpression(
+      b.identifier('foo'),
+      b.identifier('bar'),
+      false,
+      false
+    );
+
+    assert.strictEqual(
+      recast.print(nonOptionalNode).code,
+      "foo.bar"
     );
   });
 

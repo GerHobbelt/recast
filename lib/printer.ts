@@ -1,12 +1,9 @@
 import assert from "assert";
 import { printComments } from "./comments";
-import * as linesModule from "./lines";
-var fromString = linesModule.fromString;
-var Lines = linesModule.Lines;
-var concat = linesModule.concat;
+import { Lines, fromString, concat } from "./lines";
 import { normalize as normalizeOptions } from "./options";
 import { getReprinter } from "./patcher";
-import types from "./types";
+import * as types from "ast-types";
 var namedTypes = types.namedTypes;
 var isString = types.builtInTypes.string;
 var isObject = types.builtInTypes.object;
@@ -298,7 +295,7 @@ function genericPrintNoParens(path: any, options: any, print: any) {
 
     namedTypes.Printable.assert(n);
 
-    var parts: any[] = [];
+    const parts: (string | Lines)[] = [];
 
     switch (n.type) {
     case "File":
@@ -353,7 +350,7 @@ function genericPrintNoParens(path: any, options: any, print: any) {
         parts.push(path.call(print, "object"));
 
         var property = path.call(print, "property");
-        var optional = n.type === "OptionalMemberExpression";
+        var optional = n.type === "OptionalMemberExpression" && n.optional;
 
         if (n.computed) {
             parts.push(optional ? "?.[" : "[", property, "]");
@@ -424,6 +421,10 @@ function genericPrintNoParens(path: any, options: any, print: any) {
                 path.call(print, "id"),
                 path.call(print, "typeParameters")
             );
+        } else {
+            if (n.typeParameters) {
+                parts.push(path.call(print, "typeParameters"));
+            }
         }
 
         parts.push(
@@ -585,7 +586,8 @@ function genericPrintNoParens(path: any, options: any, print: any) {
 
         parts.push(
             " from ",
-            path.call(print, "source")
+            path.call(print, "source"),
+            ";"
         );
 
         return concat(parts);
@@ -718,7 +720,11 @@ function genericPrintNoParens(path: any, options: any, print: any) {
 
     case "CallExpression":
     case "OptionalCallExpression":
-        var parts = [path.call(print, "callee")];
+        parts.push(path.call(print, "callee"));
+
+        if (n.typeParameters) {
+            parts.push(path.call(print, "typeParameters"));
+        }
 
         if (n.type === "OptionalCallExpression" &&
             n.callee.type !== "OptionalMemberExpression") {
@@ -789,20 +795,18 @@ function genericPrintNoParens(path: any, options: any, print: any) {
         });
 
         if (n.inexact) {
-          var line = fromString("...", options);
-          if (!oneLine) {
-            parts.push("\n");
-            line = line.indent(options.tabWidth);
-            parts.push(line);
-            // No trailing comma after ... to maintain parity with prettier
-          } else {
-            if (len > 0) {
-              parts.push(separator);
-              parts.push(" ");
+            const line = fromString("...", options);
+            if (oneLine) {
+                if (len > 0) {
+                    parts.push(separator, " ");
+                }
+                parts.push(line);
+            } else {
+                // No trailing separator after ... to maintain parity with prettier.
+                parts.push("\n", line.indent(options.tabWidth));
             }
-            parts.push(line);
-          }
         }
+
         parts.push(oneLine ? rightBrace : "\n" + rightBrace);
 
         if (i !== 0 && oneLine && options.objectCurlySpacing) {
@@ -1001,6 +1005,9 @@ function genericPrintNoParens(path: any, options: any, print: any) {
 
     case "NewExpression":
         parts.push("new ", path.call(print, "callee"));
+        if (n.typeParameters) {
+            parts.push(path.call(print, "typeParameters"));
+        }
         var args = n.arguments;
         if (args) {
             parts.push(printArgumentsList(path, options, print));
@@ -1062,8 +1069,8 @@ function genericPrintNoParens(path: any, options: any, print: any) {
         ]);
 
     case "IfStatement":
-        var con = adjustClause(path.call(print, "consequent"), options),
-            parts = ["if (", path.call(print, "test"), ")", con];
+        var con = adjustClause(path.call(print, "consequent"), options);
+        parts.push("if (", path.call(print, "test"), ")", con);
 
         if (n.alternate)
             parts.push(
@@ -1083,8 +1090,9 @@ function genericPrintNoParens(path: any, options: any, print: any) {
                 path.call(print, "update")
             ]).indentTail(forParen.length),
             head = concat([forParen, indented, ")"]),
-            clause = adjustClause(path.call(print, "body"), options),
-            parts = [head];
+            clause = adjustClause(path.call(print, "body"), options);
+
+        parts.push(head);
 
         if (head.length > 1) {
             parts.push("\n");
@@ -1137,7 +1145,9 @@ function genericPrintNoParens(path: any, options: any, print: any) {
         var doBody = concat([
             "do",
             adjustClause(path.call(print, "body"), options)
-        ]), parts = [doBody];
+        ]);
+
+        parts.push(doBody);
 
         if (endsWithBrace(doBody, options))
             parts.push(" while");
@@ -1408,8 +1418,9 @@ function genericPrintNoParens(path: any, options: any, print: any) {
         return concat(parts);
 
     case "ClassProperty":
-        if (typeof n.accessibility === "string") {
-            parts.push(n.accessibility, " ");
+        var access = n.accessibility || n.access;
+        if (typeof access === "string") {
+            parts.push(access, " ");
         }
 
         if (n.static) {
@@ -1555,6 +1566,7 @@ function genericPrintNoParens(path: any, options: any, print: any) {
     case "FlowPredicate": // Supertype of InferredPredicate and DeclaredPredicate
     case "MemberTypeAnnotation": // Flow
     case "Type": // Flow
+    case "TSHasOptionalTypeParameterInstantiation":
     case "TSHasOptionalTypeParameters":
     case "TSHasOptionalTypeAnnotation":
         throw new Error("unprintable type: " + JSON.stringify(n.type));
@@ -1983,6 +1995,9 @@ function genericPrintNoParens(path: any, options: any, print: any) {
     case "TSNumberKeyword":
         return fromString("number", options);
 
+    case "TSBigIntKeyword":
+        return fromString("bigint", options);
+
     case "TSObjectKeyword":
         return fromString("object", options);
 
@@ -2193,7 +2208,6 @@ function genericPrintNoParens(path: any, options: any, print: any) {
 
     case "TSAsExpression": {
         var withParens = n.extra && n.extra.parenthesized === true;
-        parts = [];
         if (withParens) parts.push("(");
         parts.push(
             path.call(print, "expression"),
@@ -2420,6 +2434,19 @@ function genericPrintNoParens(path: any, options: any, print: any) {
             lines.indent(options.tabWidth), ";",
             "\n}",
         ]);
+
+    case "TSImportType":
+        parts.push("import(", path.call(print, "argument"), ")");
+
+        if (n.qualifier) {
+            parts.push(".", path.call(print, "qualifier"));
+        }
+
+        if (n.typeParameters) {
+            parts.push(path.call(print, "typeParameters"));
+        }
+
+        return concat(parts);
 
     case "TSImportEqualsDeclaration":
         if (n.isExport) {
@@ -2851,7 +2878,7 @@ function printFunctionParams(path: any, options: any, print: any) {
 
 function printExportDeclaration(path: any, options: any, print: any) {
     var decl = path.getValue();
-    var parts = ["export "];
+    var parts: (string | Lines)[] = ["export "];
     if (decl.exportKind && decl.exportKind !== "value") {
         parts.push(decl.exportKind + " ");
     }

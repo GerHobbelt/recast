@@ -1,8 +1,8 @@
 import assert from "assert";
 import path from "path";
 import fs from "fs";
-import recast from "../main";
-import types from "../lib/types";
+import * as recast from "../main";
+import * as types from "ast-types";
 import {EOL as eol} from "os";
 import * as parser from "../parsers/typescript";
 
@@ -43,8 +43,9 @@ const devDebug = 0;    // set to truthy value to have the TypeScript tests dump 
       'type E = [string, number];',
       'type F = void;',
       'type G = undefined;',
+      'type H = bigint;',
       '',
-      'type C = {',
+      'type I = {',
       '  a: string,',
       '  b?: number',
       '};'
@@ -96,11 +97,11 @@ const devDebug = 0;    // set to truthy value to have the TypeScript tests dump 
     ]);
 
     check([
-      'let strLength: string = (<string> someValue).length;',
-      'let strLength: string = <string> someValue;',
+      'let strLength1: string = (<string> someValue).length;',
+      'let strLength2: string = <string> someValue;',
       'let square = <Square> {};',
-      'let strLength: number = (someValue as string).length;',
-      'let strLength: number = someValue as string;'
+      'let strLength3: number = (someValue as string).length;',
+      'let strLength4: number = someValue as string;'
     ]);
 
     check([
@@ -296,6 +297,26 @@ const devDebug = 0;    // set to truthy value to have the TypeScript tests dump 
       '  }: Params',
       ') {}'
     ]);
+
+    check([
+      'const unqualified: import("package") = 1;',
+      'const qualified: import("package").ns = 2;',
+      'const veryQualified: import("package").ns.foo.bar = 3;',
+      'const qualifiedWithParams: import("package").ns.foo<T, U> = 4;',
+      'const justParameterized: import("package")<T> = 5;',
+    ]);
+
+    check([
+      'const a = function<T>(a: T): void {};'
+    ]);
+
+    check([
+      'new A<number>();',
+    ]);
+
+    check([
+      'createPlugin<number>();',
+    ]);
   });
 });
 
@@ -320,13 +341,17 @@ function testReprinting(pattern: any, description: any) {
     const sourcePaths = require("glob").sync(pattern, {
       cwd: __dirname
     });
-    sourcePaths.forEach(file: any => it(file, function () {
-      if (file.indexOf("/tsx/") >= 0 ||
-          file.endsWith("stitching/errors.ts") ||
-          file.endsWith("decorators/type-arguments-invalid/input.js")) {
-        return;
-      }
-
+    sourcePaths.filter((file: string) => !(
+      // Skip the following files, because they have problems that are not due
+      // to any problems in Recast. TODO Revisit this list periodically.
+      file.indexOf("/tsx/") >= 0 ||
+      file.endsWith("stitching/errors.ts") ||
+      file.endsWith("decorators/type-arguments-invalid/input.js") ||
+      // Throws an error with a slightly different message than expected:
+      file.endsWith("types/tuple-rest-invalid/input.js") ||
+      // @babel/parser can't handle naked arrow function expression statements:
+      file.endsWith("/optional-parameter/input.js")
+    )).forEach((file: string) => it(file, function () {
       const absPath = path.join(__dirname, file);
       const source = fs.readFileSync(absPath, "utf8").replace(/\r?\n/g, eol);
       let ast;
