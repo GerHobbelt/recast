@@ -684,10 +684,8 @@ function genericPrintNoParens(path: any, options: any, print: any) {
         if (n.directives) {
             path.each(function(childPath: any) {
                 parts.push(
-                    print(childPath).indent(options.tabWidth),
-                    ";",
-                    n.directives.length > 1 || !naked.isEmpty() ? "\n" : ""
-                );
+                    maybeAddSemicolon(print(childPath).indent(options.tabWidth)),
+                    n.directives.length > 1 || !naked.isEmpty() ? "\n" : "");
             }, "directives");
         }
         parts.push(naked.indent(options.tabWidth));
@@ -725,6 +723,10 @@ function genericPrintNoParens(path: any, options: any, print: any) {
 
         if (n.typeParameters) {
             parts.push(path.call(print, "typeParameters"));
+        }
+
+        if (n.typeArguments) {
+            parts.push(path.call(print, "typeArguments"));
         }
 
         if (n.type === "OptionalCallExpression" &&
@@ -1016,6 +1018,9 @@ function genericPrintNoParens(path: any, options: any, print: any) {
         parts.push("new ", path.call(print, "callee"));
         if (n.typeParameters) {
             parts.push(path.call(print, "typeParameters"));
+        }
+        if (n.typeArguments) {
+            parts.push(path.call(print, "typeArguments"));
         }
         var args = n.arguments;
         if (args) {
