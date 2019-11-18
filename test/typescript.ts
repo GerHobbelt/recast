@@ -317,6 +317,10 @@ const devDebug = 0;    // set to truthy value to have the TypeScript tests dump 
     check([
       'createPlugin<number>();',
     ]);
+
+    check([
+      'type Class<T> = new (...args: any) => T;',
+    ]);
   });
 });
 

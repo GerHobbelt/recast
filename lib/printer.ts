@@ -921,6 +921,10 @@ function genericPrintNoParens(path: any, options: any, print: any) {
           parts.push("]");
         }
 
+        if (n.typeAnnotation) {
+          parts.push(path.call(print, "typeAnnotation"));
+        }
+
         return concat(parts);
 
     case "SequenceExpression":
@@ -2089,9 +2093,18 @@ function genericPrintNoParens(path: any, options: any, print: any) {
         ]);
 
     case "TSFunctionType":
-    case "TSConstructorType":
         return concat([
             path.call(print, "typeParameters"),
+            "(",
+            printFunctionParams(path, options, print),
+            ")",
+            path.call(print, "typeAnnotation")
+        ]);
+
+    case "TSConstructorType":
+        return concat([
+            "new ",
+            path.call(print, 'typeParameters'),
             "(",
             printFunctionParams(path, options, print),
             ")",
@@ -2245,7 +2258,7 @@ function genericPrintNoParens(path: any, options: any, print: any) {
         // in a type predicate, it takes the for u is U
         var parent = path.getParentNode(0);
         var prefix = ": ";
-        if (namedTypes.TSFunctionType.check(parent)) {
+        if (namedTypes.TSFunctionType.check(parent) || namedTypes.TSConstructorType.check(parent)) {
             prefix = " => ";
         }
 
