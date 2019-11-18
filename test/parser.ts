@@ -3,7 +3,7 @@ import { parse } from "../lib/parser";
 import { getReprinter } from "../lib/patcher";
 import { Printer } from "../lib/printer";
 import { fromString } from "../lib/lines";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 var namedTypes = types.namedTypes;
 import FastPath from "../lib/fast-path";
 import { EOL as eol } from "os";
@@ -47,7 +47,7 @@ describe("parser", function() {
   });
 });
 
-function runTestsForParser(parserId: string, parserFactory: function) {
+function runTestsForParser(parserId: string) {
   const parserName = parserId.split("/").pop();
 
   if (nodeMajorVersion < 6 &&
@@ -62,8 +62,7 @@ function runTestsForParser(parserId: string, parserFactory: function) {
     return;
   }
 
-  let parser = require(parserId);
-  if (parserFactory) parser = parserFactory(parser);
+  const parser = require(parserId);
 
   it("[" + parserName + "] empty source", function () {
     var printer = new Printer;

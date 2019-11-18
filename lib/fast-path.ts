@@ -1,5 +1,5 @@
 import assert from "assert";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 var n = types.namedTypes;
 var isArray = types.builtInTypes.array;
 var isNumber = types.builtInTypes.number;

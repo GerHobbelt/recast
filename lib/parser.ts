@@ -1,5 +1,5 @@
 import assert from "assert";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 var b = types.builders;
 var isObject = types.builtInTypes.object;
 var isArray = types.builtInTypes.array;
@@ -7,8 +7,17 @@ import { normalize as normalizeOptions } from "./options";
 import { fromString } from "./lines";
 import { attach as attachComments } from "./comments";
 import * as util from "./util";
-import ES6Map from "core-js/es6/map";
-var Map = global.Map || ES6Map;
+var Map = global.Map;
+if (!Map) {
+  try {
+    var ES6Map = require("core-js/es6/map");
+    console.warn("ES6Map:", ES6Map);
+    Map = ES6Map;
+  } catch (ex) {
+    console.error(ex);
+    throw new Error("ES6 Map is not available / defined");
+  }
+}
 import { Options } from "./options";
 
 export function parse(source: string, options?: Partial<Options>) {
@@ -42,7 +51,7 @@ export function parse(source: string, options?: Partial<Options>) {
   // to avoid this fallback.
   const tokens: any[] = Array.isArray(ast.tokens)
     ? ast.tokens
-    : require("esprima").tokenize(sourceWithoutTabs, {
+    : require("@gerhobbelt/esprima").tokenize(sourceWithoutTabs, {
         loc: true
       });
 

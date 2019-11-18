@@ -1,5 +1,5 @@
 import fs from "fs";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 import { parse } from "./lib/parser";
 import { Printer } from "./lib/printer";
 import { Options } from "./lib/options";
@@ -30,7 +30,7 @@ export {
  *     }
  *   });
  */
-export { visit } from "ast-types";
+export { visit } from "@gerhobbelt/ast-types";
 
 /**
  * Options shared between parsing and printing.

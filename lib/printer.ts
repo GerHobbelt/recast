@@ -3,7 +3,7 @@ import { printComments } from "./comments";
 import { Lines, fromString, concat } from "./lines";
 import { normalize as normalizeOptions } from "./options";
 import { getReprinter } from "./patcher";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 var namedTypes = types.namedTypes;
 var isString = types.builtInTypes.string;
 var isObject = types.builtInTypes.object;
@@ -135,7 +135,7 @@ const Printer = function Printer(this: PrinterType, config?: any) {
         options = options || {};
 
         if (options.includeComments) {
-            return printComments(path, makePrintFunctionWith(options, {
+            return printComments(path, config, makePrintFunctionWith(options, {
                 includeComments: false
             }));
         }
@@ -194,7 +194,7 @@ const Printer = function Printer(this: PrinterType, config?: any) {
                     config.sourceRoot
                 )
             ),
-            options
+            config
         );
     };
 
@@ -205,7 +205,7 @@ const Printer = function Printer(this: PrinterType, config?: any) {
 
         // Print the entire AST generically.
         function printGenerically(path: any) {
-            return printComments(path, function (path: any) {
+            return printComments(path, config, function (path: any) {
                 return genericPrint(path, config, {
                     includeComments: true,
                     avoidRootParens: false
@@ -226,13 +226,13 @@ const Printer = function Printer(this: PrinterType, config?: any) {
         var pr = new PrintResult(
             lines.toString(config),
             util.composeSourceMaps(
-                options.inputSourceMap,
+                config.inputSourceMap,
                 lines.getSourceMap(
-                    options.sourceMapName,
-                    options.sourceRoot
+                    config.sourceMapName,
+                    config.sourceRoot
                 )
             ),
-            options
+            config
         );
         config.reuseWhitespace = oldReuseWhitespace;
         return pr;

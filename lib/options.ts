@@ -1,4 +1,4 @@
-import { Omit } from "ast-types/types";
+import { Omit } from "@gerhobbelt/ast-types/types";
 
 /**
  * All Recast API functions take second parameter with configuration options,

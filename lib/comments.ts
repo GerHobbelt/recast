@@ -1,5 +1,5 @@
 import assert from "assert";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 var n = types.namedTypes;
 var isArray = types.builtInTypes.array;
 var isObject = types.builtInTypes.object;
@@ -315,7 +315,7 @@ function printTrailingComment(commentPath: any, print: any) {
     return parts;
 }
 
-export function printComments(path: any, options: any, print: any) {
+export function printComments(path: any, options: any, print: function) {
   var value = path.getValue();
   var innerLines = print(path);
   var comments = n.Node.check(value) &&

@@ -41,7 +41,7 @@
     "@gerhobbelt/esprima": "4.0.1-27",
     "core-js": "3.1.4",
     "private": "0.1.8",
-    "source-map": "0.7.3"
+    "@gerhobbelt/source-map": "0.7.3"
   },
   "devDependencies": {
     "@babel/core": "7.5.5",

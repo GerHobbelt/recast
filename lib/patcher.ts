@@ -1,6 +1,6 @@
 import assert from "assert";
 import * as linesModule from "./lines";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 var Printable = types.namedTypes.Printable;
 var Expression = types.namedTypes.Expression;
 var ReturnStatement = types.namedTypes.ReturnStatement;

@@ -35,4 +35,4 @@ fi
 
 cd .. # back to the recast/test/ directory
 
-exec mocha --check-leaks --require ts-node/register/transpile-only --reporter spec --full-trace $@ run.ts
+exec mocha --check-leaks --reporter spec --full-trace $@ run.js

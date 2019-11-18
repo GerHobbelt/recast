@@ -1,7 +1,7 @@
 import assert from "assert";
 import { parse } from "../lib/parser";
 import { Printer } from "../lib/printer";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 import { EOL as eol } from "os";
 
 describe("type syntax", function() {

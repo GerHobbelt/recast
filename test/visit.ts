@@ -1,5 +1,5 @@
 import assert from "assert";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 var namedTypes = types.namedTypes;
 var builders = types.builders;
 import { parse } from "../lib/parser";

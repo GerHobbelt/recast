@@ -1,7 +1,7 @@
 import assert from "assert";
 import sourceMap from "source-map";
 import * as recast from "../main";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 var n = types.namedTypes;
 var b = types.builders;
 var NodePath = types.NodePath;

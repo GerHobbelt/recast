@@ -1,7 +1,7 @@
 import assert from "assert";
 import sourceMap from "source-map";
 import { normalize as normalizeOptions, Options } from "./options";
-import { namedTypes } from "ast-types";
+import { namedTypes } from "@gerhobbelt/ast-types";
 import { comparePos } from "./util";
 import Mapping from "./mapping";
 

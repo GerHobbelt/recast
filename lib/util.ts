@@ -1,5 +1,5 @@
 import assert from "assert";
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 var n = types.namedTypes;
 import sourceMap from "source-map";
 var SourceMapConsumer = sourceMap.SourceMapConsumer;

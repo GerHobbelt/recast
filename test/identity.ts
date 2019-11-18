@@ -2,7 +2,7 @@ import assert from "assert";
 import fs from "fs";
 import path from "path";
 var eol = require("os").EOL;
-import * as types from "ast-types";
+import * as types from "@gerhobbelt/ast-types";
 import * as recast from "../main";
 
 var nodeMajorVersion = parseInt(process.versions.node, 10);
